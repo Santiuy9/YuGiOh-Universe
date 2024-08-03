@@ -34,6 +34,7 @@ class EditDeck extends Phaser.Scene {
 
     preload() {
         this.load.json('herosData', 'HEROS.json');
+        this.load.image('Background', 'assets/background.png')
 
         // Cargar imágenes desde JSON
         this.load.once('filecomplete-json-herosData', (key, type, data) => {
@@ -49,19 +50,23 @@ class EditDeck extends Phaser.Scene {
     }
 
     create() {
+        const background = this.add.image(0, 0, 'Background').setOrigin(0).setScale(0.6);
+        const backgroundWidth = 1200;
+        const backgroundHeight = 700;
+        background.setDisplaySize(backgroundWidth, backgroundHeight);
         const herosData = this.cache.json.get('herosData').data;
-        const container = this.add.container(50, 50);
+        const container = this.add.container(650, 25);
         const imageWidth = 100; // Ajusta este valor según el tamaño deseado
         const imageHeight = 150; // Ajusta este valor según el tamaño deseado
         const offset = 160; // Ajusta este valor según el espacio entre imágenes
 
         // Crear un fondo para el contenedor
         const containerHeight = (imageHeight + offset) * 10; // Altura del contenedor basado en la cantidad de imágenes
-        const background = this.add.graphics();
-        background.fillStyle(0x8a2be2, 1); // Color violeta
-        background.fillRect(0, 0, imageWidth + 20, containerHeight); // Relleno del rectángulo
+        const listCardBackground = this.add.graphics();
+        listCardBackground.fillStyle(0x8a2be2, 1); // Color violeta
+        listCardBackground.fillRect(0, 0, imageWidth + 20, containerHeight); // Relleno del rectángulo
 
-        container.add(background);
+        container.add(listCardBackground);
 
         if (herosData && Array.isArray(herosData)) {
             let y = 10; // Ajusta el valor inicial según el padding deseado
@@ -69,7 +74,9 @@ class EditDeck extends Phaser.Scene {
             herosData.slice(0, 10).forEach(card => {
                 const image = this.add.image(10, y, card.id.toString());
                 image.setDisplaySize(imageWidth, imageHeight); // Establece un tamaño fijo para todas las imágenes
-                image.setOrigin(0)
+                image.setOrigin(0);
+                image.setInteractive();
+                image.on('pointerdown', () => this.showCardDetails(card));
                 container.add(image);
                 y += offset;
             });
@@ -78,29 +85,45 @@ class EditDeck extends Phaser.Scene {
         }
 
         // Crear una máscara de desplazamiento
-        const maskShape = this.make.graphics();
-        maskShape.fillRect(50, 50, imageWidth + 20, 600); // Tamaño del área visible
-        const mask = maskShape.createGeometryMask();
+        // const maskShape = this.make.graphics();
+        // maskShape.fillRect(50, 50, imageWidth + 20, 600); // Tamaño del área visible
+        // const mask = maskShape.createGeometryMask();
 
-        container.setMask(mask);
+        // container.setMask(mask);
 
         // Habilitar eventos de entrada
         this.input.on('wheel', (pointer, gameObjects, deltaX, deltaY, deltaZ) => {
             container.y -= deltaY / 1; // Ajusta la velocidad de desplazamiento
             if (container.y > 50) {
-                container.y = 50;
+                container.y = 25;
             }
             if (container.y < 600 - containerHeight + 50) { // Ajusta el valor según la altura del contenedor
                 container.y = 600 - containerHeight + 50;
             }
         });
     }
+
+    showCardDetails(card) {
+        // Mostrar detalles de la carta en una ventana emergente o en algún área de la pantalla
+        const detailText = `Nombre: ${card.name}\nTipo: ${card.type}\nDescripción: ${card.desc}`;
+        const detailBox = this.add.text(400, 300, detailText, {
+            fontSize: '16px',
+            fill: '#fff',
+            listCardBackgroundColor: '#000',
+            padding: { left: 10, right: 10, top: 10, bottom: 10 },
+        }).setOrigin(0.5);
+
+        // Añadir un temporizador para eliminar el cuadro de texto después de unos segundos
+        this.time.delayedCall(3000, () => {
+            detailBox.destroy();
+        }, [], this);
+    }
 }
 
 const config = {
     type: Phaser.AUTO,
-    width: 800,
-    height: 600,
+    width: 1200,
+    height: 700,
     scene: [MainMenu, EditDeck],
 };
 
