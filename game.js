@@ -38,7 +38,7 @@ class EditDeck extends Phaser.Scene {
         // Cargar imágenes desde JSON
         this.load.once('filecomplete-json-herosData', (key, type, data) => {
             if (data && Array.isArray(data.data)) {
-                data.data.slice(0, 4).forEach(card => {
+                data.data.slice(0, 10).forEach(card => {
                     const imageUrl = card.card_images[0].image_url;
                     this.load.image(card.id.toString(), imageUrl);
                 });
@@ -50,22 +50,50 @@ class EditDeck extends Phaser.Scene {
 
     create() {
         const herosData = this.cache.json.get('herosData').data;
-        let x = 300;
-        let y = 50;
-        const offset = 150;
+        const container = this.add.container(50, 50);
+        const imageWidth = 100; // Ajusta este valor según el tamaño deseado
+        const imageHeight = 150; // Ajusta este valor según el tamaño deseado
+        const offset = 160; // Ajusta este valor según el espacio entre imágenes
+
+        // Crear un fondo para el contenedor
+        const containerHeight = (imageHeight + offset) * 10; // Altura del contenedor basado en la cantidad de imágenes
+        const background = this.add.graphics();
+        background.fillStyle(0x8a2be2, 1); // Color violeta
+        background.fillRect(0, 0, imageWidth + 20, containerHeight); // Relleno del rectángulo
+
+        container.add(background);
 
         if (herosData && Array.isArray(herosData)) {
-            herosData.slice(0, 4).forEach(card => {
-                this.add.image(x, y, card.id.toString()).setScale(0.3);
+            let y = 10; // Ajusta el valor inicial según el padding deseado
+
+            herosData.slice(0, 10).forEach(card => {
+                const image = this.add.image(10, y, card.id.toString());
+                image.setDisplaySize(imageWidth, imageHeight); // Establece un tamaño fijo para todas las imágenes
+                image.setOrigin(0)
+                container.add(image);
                 y += offset;
-                if (x > this.cameras.main.width - offset) {
-                    x = 50;
-                    x += offset;
-                }
             });
         } else {
             console.error('Error al cargar los datos del JSON o los datos están vacíos.');
         }
+
+        // Crear una máscara de desplazamiento
+        const maskShape = this.make.graphics();
+        maskShape.fillRect(50, 50, imageWidth + 20, 600); // Tamaño del área visible
+        const mask = maskShape.createGeometryMask();
+
+        container.setMask(mask);
+
+        // Habilitar eventos de entrada
+        this.input.on('wheel', (pointer, gameObjects, deltaX, deltaY, deltaZ) => {
+            container.y -= deltaY / 1; // Ajusta la velocidad de desplazamiento
+            if (container.y > 50) {
+                container.y = 50;
+            }
+            if (container.y < 600 - containerHeight + 50) { // Ajusta el valor según la altura del contenedor
+                container.y = 600 - containerHeight + 50;
+            }
+        });
     }
 }
 
@@ -77,5 +105,3 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
-
-
