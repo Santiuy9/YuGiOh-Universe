@@ -1,31 +1,4 @@
 // game.js
-
-// Definir la escena Principal (MainMenu)
-class MainMenu extends Phaser.Scene {
-    constructor() {
-        super({ key: 'MainMenu' });
-    }
-
-    preload() {
-        // Pre-cargar recursos si es necesario
-        this.load.image('button', 'assets/button_go.png');
-    }
-
-    create() {
-        this.add.text(750, 200, 'Main Menu', { fontSize: '32px', fill: '#fff' }).setOrigin(0.5);
-
-        // Crear botón para ir a la escena EditDeck
-        const editDeckButton = this.add.sprite(750, 350, 'button').setScale(0.2).setInteractive();
-
-        editDeckButton.on('pointerdown', () => {
-            this.scene.start('EditDeck');
-        });
-
-        // Agregar texto al botón
-        this.add.text(750, 290, 'Editar Deck', { fontSize: '24px', fill: '#fff' }).setOrigin(0.5);
-    }
-}
-
 // Definir la escena EditDeck
 class EditDeck extends Phaser.Scene {
     constructor() {
@@ -50,10 +23,28 @@ class EditDeck extends Phaser.Scene {
     }
 
     create() {
+        // Array para cartas seleccionadas
+        const selectedCards = [];
+        console.log(selectedCards);
+        
         const background = this.add.image(0, 0, 'Background').setOrigin(0).setScale(0.6);
         const backgroundWidth = 1500;
         const backgroundHeight = 700;
         background.setDisplaySize(backgroundWidth, backgroundHeight);
+
+        // Crear nuevo contenedor para soltar las cartas
+        const dropZoneContainer = this.add.container(300, 25).setDepth(0);
+        const dropZoneBackground = this.add.graphics();
+        dropZoneBackground.fillStyle(0x000000, 0.5); // Fondo verde con transparencia
+        dropZoneBackground.fillRect(0, 0, 675, 650); // Ajusta el tamaño del contenedor
+        dropZoneContainer.add(dropZoneBackground);
+
+        // Crear contenedor para imágenes duplicadas y detalles con fondo
+        const duplicateBackground = this.add.graphics();
+        duplicateBackground.fillStyle(0x000000, 0.5); // Color negro con transparencia
+        duplicateBackground.fillRect(25, 25, 250, 650); // Ajusta el tamaño del fondo según el contenedor
+        const duplicateContainer = this.add.container(25, 25);
+        // duplicateContainer.add(duplicateBackground);
 
         const herosData = this.cache.json.get('herosData').data;
         const container = this.add.container(1000, 25);
@@ -68,25 +59,15 @@ class EditDeck extends Phaser.Scene {
 
         container.add(listCardBackground);
 
-        // Crear contenedor para imágenes duplicadas y detalles con fondo
-        const duplicateBackground = this.add.graphics();
-        duplicateBackground.fillStyle(0x000000, 0.5); // Color negro con transparencia
-        duplicateBackground.fillRect(25, 25, 250, 650); // Ajusta el tamaño del fondo según el contenedor
-        const duplicateContainer = this.add.container(25, 25);
-        // duplicateContainer.add(duplicateBackground);
+        
 
-        // Crear nuevo contenedor para soltar las cartas
-        const dropZoneContainer = this.add.container(300, 25);
-        const dropZoneBackground = this.add.graphics();
-        dropZoneBackground.fillStyle(0x000000, 0.5); // Fondo verde con transparencia
-        dropZoneBackground.fillRect(0, 0, 675, 650); // Ajusta el tamaño del contenedor
-        dropZoneContainer.add(dropZoneBackground);
+        
 
         if (herosData && Array.isArray(herosData)) {
             let y = 100;
 
             herosData.slice(0, 57).forEach(card => {
-                const image = this.add.image(60, y, card.id.toString());
+                const image = this.add.image(60, y, card.id.toString()).setDepth(1);
                 image.setDisplaySize(imageWidth, imageHeight);
                 image.setOrigin(0.5);
                 image.setInteractive({ draggable: true }); // Habilitar arrastre
@@ -102,6 +83,9 @@ class EditDeck extends Phaser.Scene {
                 let miTween;
                 // Agregar eventos para el mouse
                 image.on('pointerover', () => {
+                    
+                    image.depth = 1
+
                     const cardName = card.name;
                     const cardAttribute = card.attribute;
                     const cardLevel = card.level;
@@ -158,6 +142,8 @@ class EditDeck extends Phaser.Scene {
                         ease: 'Sine.easeInOut'
                     });
 
+                    image.setTint('0x707070')
+
                     // Duplicar la imagen y agregarla al contenedor de duplicados
                     const duplicateImage = this.add.image(125, 200, card.id.toString());
                     duplicateImage.setDisplaySize(imageWidth * 2, imageHeight * 2);
@@ -170,6 +156,7 @@ class EditDeck extends Phaser.Scene {
                     image.setDisplaySize(imageWidth, imageHeight);
                     // Limpiar las imágenes duplicadas y los detalles al salir del hover
                     duplicateContainer.removeAll(true);
+                    image.setTint();
                 });
 
                 // Manejar el arrastre
@@ -181,14 +168,19 @@ class EditDeck extends Phaser.Scene {
                 image.on('drag', (pointer, dragX, dragY) => {
                     image.x = dragX;
                     image.y = dragY;
+                    // console.log(`x: ${image.x}`)
+                    // console.log(`y: ${image.y}`)
+                    
                 });
 
                 image.on('dragend', (pointer, dragX, dragY) => {
-                    const dropZoneBounds = dropZoneContainer.getBounds();
-                    if (Phaser.Geom.Rectangle.Contains(dropZoneBounds, dragX, dragY)) {
-                        image.x = 200; // Coordenada fija dentro del nuevo contenedor
-                        image.y = 300; // Coordenada fija dentro del nuevo contenedor
+                    // const zone = (image.x > -700 && image.x < -25) ? 
+                    if (image.x > -700 && image.x < -25) {
+                        selectedCards.push({ id: card.id, name: card.name, });
+                        image.x = 100; // Coordenada fija dentro del nuevo contenedor
+                        image.y = 100; // Coordenada fija dentro del nuevo contenedor
                         dropZoneContainer.add(image);
+                        console.log(selectedCards);
                     } else {
                         image.x = image.getData('originalX');
                         image.y = image.getData('originalY');
@@ -211,6 +203,9 @@ class EditDeck extends Phaser.Scene {
                 container.y = 600 - containerHeight + 175;
             }
         });
+
+        
+        
     }
 }
 
@@ -218,7 +213,7 @@ const config = {
     type: Phaser.AUTO,
     width: 1500,
     height: 700,
-    scene: [EditDeck, MainMenu],
+    scene: [EditDeck],
 };
 
 const game = new Phaser.Game(config);
