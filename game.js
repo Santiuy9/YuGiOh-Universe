@@ -12,17 +12,17 @@ class MainMenu extends Phaser.Scene {
     }
 
     create() {
-        this.add.text(600, 200, 'Main Menu', { fontSize: '32px', fill: '#fff' }).setOrigin(0.5);
+        this.add.text(750, 200, 'Main Menu', { fontSize: '32px', fill: '#fff' }).setOrigin(0.5);
 
         // Crear botón para ir a la escena EditDeck
-        const editDeckButton = this.add.sprite(600, 350, 'button').setScale(0.2).setInteractive();
+        const editDeckButton = this.add.sprite(750, 350, 'button').setScale(0.2).setInteractive();
 
         editDeckButton.on('pointerdown', () => {
             this.scene.start('EditDeck');
         });
 
         // Agregar texto al botón
-        this.add.text(600, 290, 'Editar Deck', { fontSize: '24px', fill: '#fff' }).setOrigin(0.5);
+        this.add.text(750, 290, 'Editar Deck', { fontSize: '24px', fill: '#fff' }).setOrigin(0.5);
     }
 }
 
@@ -33,13 +33,13 @@ class EditDeck extends Phaser.Scene {
     }
 
     preload() {
-        this.load.json('herosData', 'HEROS.json');
+        this.load.json('herosData', 'jasons_y_scripts/Heroes.json');
         this.load.image('Background', 'assets/background.png');
 
         // Cargar imágenes desde JSON
         this.load.once('filecomplete-json-herosData', (key, type, data) => {
             if (data && Array.isArray(data.data)) {
-                data.data.slice(0, 10).forEach(card => {
+                data.data.slice(0, 30).forEach(card => {
                     const imageUrl = card.card_images[0].image_url;
                     this.load.image(card.id.toString(), imageUrl);
                 });
@@ -63,29 +63,84 @@ class EditDeck extends Phaser.Scene {
 
         const containerHeight = (imageHeight + offset) * 10;
         const listCardBackground = this.add.graphics();
-        listCardBackground.fillStyle(0x8a2be2, 0.75);
+        listCardBackground.fillStyle(0x000000, 0.5);
         listCardBackground.fillRect(0, 0, imageWidth + 20, containerHeight);
 
         container.add(listCardBackground);
 
-        // Crear contenedor para imágenes duplicadas con fondo
-        const duplicateContainer = this.add.container(25, 25);
+        // Crear contenedor para imágenes duplicadas y detalles con fondo
         const duplicateBackground = this.add.graphics();
         duplicateBackground.fillStyle(0x000000, 0.5); // Color negro con transparencia
-        duplicateBackground.fillRect(0, 0, 250, 650); // Ajusta el tamaño del fondo según el contenedor
-        duplicateContainer.add(duplicateBackground);
+        duplicateBackground.fillRect(25, 25, 250, 650); // Ajusta el tamaño del fondo según el contenedor
+        const duplicateContainer = this.add.container(25, 25);
+        // duplicateContainer.add(duplicateBackground);
 
         if (herosData && Array.isArray(herosData)) {
             let y = 100;
 
-            herosData.slice(0, 10).forEach(card => {
+            herosData.slice(0, 30).forEach(card => {
                 const image = this.add.image(60, y, card.id.toString());
                 image.setDisplaySize(imageWidth, imageHeight);
                 image.setOrigin(0.5);
                 image.setInteractive({ draggable: true }); // Habilitar arrastre
 
+                let nameBox;
+                let attributeBox;
+                let levelBox;
+                let typeBox;
+                let descriptionBox;
+                let attackBox;
+                let defenseBox;
+
                 // Agregar eventos para el mouse
                 image.on('pointerover', () => {
+                    
+                    const cardName = card.name;
+                    const cardAttribute = card.attribute;
+                    const cardLevel = card.level;
+                    const cardType = card.type;
+                    const cardDescription = card.desc;
+                    const cardAttack = card.atk;
+                    const cardDefense = card.def;
+
+                    nameBox = this.add.text(125, 25, cardName, {
+                        fontSize: '20px',
+                        fill: '#fff',
+                    }).setOrigin(0.5);
+                    attributeBox = this.add.text(240, 355, cardAttribute, {
+                        fontSize: '16px',
+                        fill: '#fff',
+                    }).setOrigin(1, 0);
+                    typeBox = this.add.text(125, 380, cardType, {
+                        fontSize: '16px',
+                        fill: '#fff'
+                    }).setOrigin(0.5);
+                    levelBox = cardType == 'spell card' || cardType == 'trap card' ? null : this.add.text(10, 355, `Level ${cardLevel}`, {
+                        fontSize: '16px',
+                        fill: '#fff',
+                    }).setOrigin(0);
+                    descriptionBox = this.add.text(10, 390, cardDescription, {
+                        fontSize: '12px',
+                        fill: '#fff',
+                        wordWrap: { width: 240 }
+                    }).setOrigin(0);
+                    attackBox = cardType == 'spell card' || cardType == 'trap card' ? null : this.add.text(10, 630, `ATK: ${cardAttack}`, {
+                        fontSize: '16px',
+                        fill: '#fff',
+                    }).setOrigin(0);
+                    defenseBox = card.type == 'spell card' || cardType == 'trap card' ? null : this.add.text(160, 630, `DEF: ${cardDefense}`, {
+                        fontSize: '16px',
+                        fill: '#fff',
+                    }).setOrigin(0);
+
+                    duplicateContainer.add(nameBox);
+                    duplicateContainer.add(attributeBox);
+                    duplicateContainer.add(levelBox);
+                    duplicateContainer.add(typeBox);
+                    duplicateContainer.add(descriptionBox);
+                    duplicateContainer.add(attackBox);
+                    duplicateContainer.add(defenseBox);
+
                     this.tweens.add({
                         targets: image,
                         displayWidth: imageWidth * 1.3,
@@ -95,15 +150,13 @@ class EditDeck extends Phaser.Scene {
                     });
 
                     // Duplicar la imagen y agregarla al contenedor de duplicados
-                    const duplicateImage = this.add.image(25, 25, card.id.toString());
+                    const duplicateImage = this.add.image(125, 200, card.id.toString());
                     duplicateImage.setDisplaySize(imageWidth * 2, imageHeight * 2);
                     duplicateImage.setOrigin(0.5);
-                    // duplicateImage.setAlpha(0.5); // Opcional: cambiar opacidad para distinguir
                     duplicateContainer.add(duplicateImage);
 
-                    // Posicionar la imagen duplicada en el centro del contenedor de duplicados
-                    duplicateImage.x = 125;
-                    duplicateImage.y = 225;
+                    // Mostrar detalles de la carta en el contenedor de duplicados
+                    // this.showCardDetails(card, duplicateContainer);
                 });
 
                 image.on('pointerout', () => {
@@ -115,11 +168,18 @@ class EditDeck extends Phaser.Scene {
                         ease: 'Power2'
                     });
 
-                    // Limpiar las imágenes duplicadas al salir del hover
-                    // duplicateContainer.removeAll();
-                });
+                    // Limpiar las imágenes duplicadas y los detalles al salir del hover
+                    duplicateContainer.removeAll(true);
+                    // duplicateContainer.removeAll(nameBox);
+                    // duplicateContainer.removeAll(attributeBox);
+                    // duplicateContainer.removeAll(levelBox);
+                    // duplicateContainer.removeAll(typeBox);
+                    // duplicateContainer.removeAll(descriptionBox);
+                    // duplicateContainer.removeAll(attackBox);
+                    // duplicateContainer.removeAll(defenseBox);
 
-                image.on('pointerdown', () => this.showCardDetails(card));
+                    //duplicateContainer.add(duplicateBackground);
+                });
 
                 // Manejar el arrastre
                 image.on('dragstart', (pointer, dragX, dragY) => {
@@ -153,45 +213,32 @@ class EditDeck extends Phaser.Scene {
         });
     }
 
-    showCardDetails(card) {
-        const detailContainer = this.add.container(400, 300);
-        const detailBackground = this.add.graphics();
-        detailBackground.fillStyle(0x000000, 0.7);
-        detailBackground.fillRect(-150, -75, 300, 150);
+    // showCardDetails(card, container) {
+    //     // Añadir detalles de la carta al contenedor
 
-        const detailText = `Nombre: ${card.name}\nTipo: ${card.type}\nDescripción: ${card.desc}`;
-        const detailBox = this.add.text(0, 0, detailText, {
-            fontSize: '16px',
-            fill: '#fff',
-            backgroundColor: '#000',
-            padding: { left: 10, right: 10, top: 10, bottom: 10 },
-        }).setOrigin(0.5);
+    //     // Fondo de detalles
+    //     // const detailBackground = this.add.graphics();
+    //     // detailBackground.fillStyle(0x000000, 0.7);
+    //     // detailBackground.fillRect(0, 300, 300, 150);
+    //     // container.add(detailBackground);
 
-        const closeButton = this.add.text(0, 60, 'Cerrar', {
-            fontSize: '16px',
-            fill: '#ff0000',
-            backgroundColor: '#fff',
-            padding: { left: 10, right: 10, top: 5, bottom: 5 },
-        }).setOrigin(0.5).setInteractive();
-
-        closeButton.on('pointerdown', () => {
-            detailContainer.destroy();
-        });
-
-        detailContainer.add([detailBackground, detailBox, closeButton]);
-
-        this.time.delayedCall(5000, () => {
-            detailContainer.destroy();
-        }, [], this);
-    }
+    //     // Texto de detalles
+    //     const detailText = `Nombre: ${card.name}\nTipo: ${card.type}\nDescripción: ${card.desc}`;
+    //     const detailBox = this.add.text(25, 400, detailText, {
+    //         fontSize: '16px',
+    //         fill: '#fff',
+    //         // backgroundColor: '#000',
+    //         // padding: { left: 10, right: 10, top: 10, bottom: 10 },
+    //     }).setOrigin(0);
+    //     container.add(detailBox);
+    // }
 }
 
 const config = {
     type: Phaser.AUTO,
     width: 1500,
     height: 700,
-    scene: [MainMenu, EditDeck],
+    scene: [EditDeck, MainMenu],
 };
 
 const game = new Phaser.Game(config);
-
