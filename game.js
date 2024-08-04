@@ -39,7 +39,7 @@ class EditDeck extends Phaser.Scene {
         // Cargar imágenes desde JSON
         this.load.once('filecomplete-json-herosData', (key, type, data) => {
             if (data && Array.isArray(data.data)) {
-                data.data.slice(0, 30).forEach(card => {
+                data.data.slice(0, 100).forEach(card => {
                     const imageUrl = card.card_images[0].image_url;
                     this.load.image(card.id.toString(), imageUrl);
                 });
@@ -61,7 +61,7 @@ class EditDeck extends Phaser.Scene {
         const imageHeight = 150;
         const offset = 180;
 
-        const containerHeight = (imageHeight + offset) * 10;
+        const containerHeight = (imageHeight + offset) * 30;
         const listCardBackground = this.add.graphics();
         listCardBackground.fillStyle(0x000000, 0.5);
         listCardBackground.fillRect(0, 0, imageWidth + 20, containerHeight);
@@ -75,10 +75,17 @@ class EditDeck extends Phaser.Scene {
         const duplicateContainer = this.add.container(25, 25);
         // duplicateContainer.add(duplicateBackground);
 
+        // Crear nuevo contenedor para soltar las cartas
+        const dropZoneContainer = this.add.container(300, 25);
+        const dropZoneBackground = this.add.graphics();
+        dropZoneBackground.fillStyle(0x000000, 0.5); // Fondo verde con transparencia
+        dropZoneBackground.fillRect(0, 0, 675, 650); // Ajusta el tamaño del contenedor
+        dropZoneContainer.add(dropZoneBackground);
+
         if (herosData && Array.isArray(herosData)) {
             let y = 100;
 
-            herosData.slice(0, 30).forEach(card => {
+            herosData.slice(0, 57).forEach(card => {
                 const image = this.add.image(60, y, card.id.toString());
                 image.setDisplaySize(imageWidth, imageHeight);
                 image.setOrigin(0.5);
@@ -92,9 +99,9 @@ class EditDeck extends Phaser.Scene {
                 let attackBox;
                 let defenseBox;
 
+                let miTween;
                 // Agregar eventos para el mouse
                 image.on('pointerover', () => {
-                    
                     const cardName = card.name;
                     const cardAttribute = card.attribute;
                     const cardLevel = card.level;
@@ -141,12 +148,14 @@ class EditDeck extends Phaser.Scene {
                     duplicateContainer.add(attackBox);
                     duplicateContainer.add(defenseBox);
 
-                    this.tweens.add({
+                    miTween = this.tweens.add({
                         targets: image,
                         displayWidth: imageWidth * 1.3,
                         displayHeight: imageHeight * 1.3,
-                        duration: 300,
-                        ease: 'Power2'
+                        yoyo: true,
+                        repeat: -1,
+                        duration: 500,
+                        ease: 'Sine.easeInOut'
                     });
 
                     // Duplicar la imagen y agregarla al contenedor de duplicados
@@ -154,36 +163,19 @@ class EditDeck extends Phaser.Scene {
                     duplicateImage.setDisplaySize(imageWidth * 2, imageHeight * 2);
                     duplicateImage.setOrigin(0.5);
                     duplicateContainer.add(duplicateImage);
-
-                    // Mostrar detalles de la carta en el contenedor de duplicados
-                    // this.showCardDetails(card, duplicateContainer);
                 });
 
                 image.on('pointerout', () => {
-                    this.tweens.add({
-                        targets: image,
-                        displayWidth: imageWidth,
-                        displayHeight: imageHeight,
-                        duration: 300,
-                        ease: 'Power2'
-                    });
-
+                    miTween.stop();
+                    image.setDisplaySize(imageWidth, imageHeight);
                     // Limpiar las imágenes duplicadas y los detalles al salir del hover
                     duplicateContainer.removeAll(true);
-                    // duplicateContainer.removeAll(nameBox);
-                    // duplicateContainer.removeAll(attributeBox);
-                    // duplicateContainer.removeAll(levelBox);
-                    // duplicateContainer.removeAll(typeBox);
-                    // duplicateContainer.removeAll(descriptionBox);
-                    // duplicateContainer.removeAll(attackBox);
-                    // duplicateContainer.removeAll(defenseBox);
-
-                    //duplicateContainer.add(duplicateBackground);
                 });
 
                 // Manejar el arrastre
-                image.on('dragstart', (pointer, dragX, dragY) => {
-                    // image.setAlpha(0.5);
+                image.on('dragstart', (pointer, dragX, dragY) => { 
+                    image.setData('originalX', image.x);
+                    image.setData('originalY', image.y);
                 });
 
                 image.on('drag', (pointer, dragX, dragY) => {
@@ -192,7 +184,15 @@ class EditDeck extends Phaser.Scene {
                 });
 
                 image.on('dragend', (pointer, dragX, dragY) => {
-                    // image.setAlpha(1);
+                    const dropZoneBounds = dropZoneContainer.getBounds();
+                    if (Phaser.Geom.Rectangle.Contains(dropZoneBounds, dragX, dragY)) {
+                        image.x = 200; // Coordenada fija dentro del nuevo contenedor
+                        image.y = 300; // Coordenada fija dentro del nuevo contenedor
+                        dropZoneContainer.add(image);
+                    } else {
+                        image.x = image.getData('originalX');
+                        image.y = image.getData('originalY');
+                    }
                 });
 
                 container.add(image);
@@ -207,31 +207,11 @@ class EditDeck extends Phaser.Scene {
             if (container.y > 50) {
                 container.y = 25;
             }
-            if (container.y < 600 - containerHeight + 50) {
-                container.y = 600 - containerHeight + 75;
+            if (container.y < 600 - containerHeight + 150) {
+                container.y = 600 - containerHeight + 175;
             }
         });
     }
-
-    // showCardDetails(card, container) {
-    //     // Añadir detalles de la carta al contenedor
-
-    //     // Fondo de detalles
-    //     // const detailBackground = this.add.graphics();
-    //     // detailBackground.fillStyle(0x000000, 0.7);
-    //     // detailBackground.fillRect(0, 300, 300, 150);
-    //     // container.add(detailBackground);
-
-    //     // Texto de detalles
-    //     const detailText = `Nombre: ${card.name}\nTipo: ${card.type}\nDescripción: ${card.desc}`;
-    //     const detailBox = this.add.text(25, 400, detailText, {
-    //         fontSize: '16px',
-    //         fill: '#fff',
-    //         // backgroundColor: '#000',
-    //         // padding: { left: 10, right: 10, top: 10, bottom: 10 },
-    //     }).setOrigin(0);
-    //     container.add(detailBox);
-    // }
 }
 
 const config = {
