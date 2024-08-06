@@ -134,12 +134,12 @@ export class EditDeck extends Phaser.Scene {
                 icon.visible = false;
             })
             carta.on('dragstart', () => {
-            console.log(`Iniciando arrastre de "${this.allCardsArray[i].nombre}`)
-            carta.setTint('0x8f8f8f')
+                console.log(`Iniciando arrastre de "${this.allCardsArray[i].nombre}`)
+                carta.setTint('0x8f8f8f')
             });
             carta.on('drag', (pointer, dragX, dragY) => {
                 carta.x = dragX;
-                carta.y= dragY;
+                carta.y = dragY;
             });
             carta.on('dragend', () => {
                 carta.setTint()
